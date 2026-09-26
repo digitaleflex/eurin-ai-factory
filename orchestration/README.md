@@ -4,40 +4,40 @@ L'orchestration décrit comment la Factory fait travailler les agents ensemble.
 
 Elle ne remplace ni les agents, ni les règles, ni les Skills.
 
+## Architecture
+
+```text
+User / Eurin
+    ↓
+Orchestrator
+    ├── Context Loader
+    ├── Decision Gates
+    ├── Workflow Engine
+    │      ├── Agents
+    │      └── Handoffs
+    ├── Validation
+    ├── Escalation / Human Approval
+    ├── Execution Record
+    └── Memory Capture
+             ↓
+          Outcome
+```
+
 ## Responsabilités
+
 - sélectionner le workflow adapté ;
 - charger le contexte minimal ;
 - déclencher les agents dans le bon ordre ;
 - contrôler les handoffs ;
 - appliquer les Decision Gates ;
 - interrompre le flux lorsqu'une validation manque ;
-- enregistrer les décisions et apprentissages ;
+- gérer les escalades ;
+- enregistrer l'exécution ;
+- capturer les apprentissages ;
 - mesurer le résultat du workflow.
 
-## Architecture
-```text
-User / Eurin
-    |
-    v
-Orchestrator
-    |
-    +--> Context Loader
-    +--> Decision Gate
-    +--> Workflow
-    |       +--> Agent A
-    |       +--> Handoff
-    |       +--> Agent B
-    |       +--> Handoff
-    |       +--> Agent C
-    +--> Validation Gate
-    +--> Human Approval (si requis)
-    +--> Memory Capture
-    |
-    v
-Outcome
-```
-
 ## Règles
+
 1. L'orchestrateur ne décide pas à la place d'Eurin lorsqu'une décision humaine est requise.
 2. Il ne contourne jamais un Decision Gate.
 3. Il ne transmet pas tout le contexte à tous les agents par défaut.
@@ -47,19 +47,22 @@ Outcome
 7. Les actions à fort blast radius suivent PROPOSAL → REVIEW → APPROVAL → EXECUTION.
 8. Toute modification du workflow doit rester traçable.
 
-## Flux de référence
-```text
-INTAKE → CONTEXT → DECISION GATE → WORKFLOW SELECTION
-       → AGENT EXECUTION → HANDOFF VALIDATION
-       → QUALITY / SECURITY GATES → HUMAN APPROVAL ?
-       → DELIVERY → MEMORY CAPTURE
-```
+## Documents
+
+- [Engine](./engine.md)
+- [Context Loading](./context-loading.md)
+- [Decision Gates](./decision-gates.md)
+- [Workflow Definition](./workflow-definition.md)
+- [Escalation](./escalation.md)
+- [Execution Record](./execution-record.md)
+- [Metrics](./metrics.md)
+- [Workflows](./workflows/README.md)
+- [Handoffs](./handoffs/README.md)
 
 ## Workflows V1
-- feature-delivery — nouvelle fonctionnalité ;
-- bug-fix — correction d'un défaut ;
-- architecture-change — changement structurant ;
-- security-review — analyse de sécurité ;
-- incident-response — incident nécessitant analyse et remédiation.
 
-Voir workflows/README.md et handoffs/README.md.
+- feature-delivery
+- bug-fix
+- architecture-change
+- security-review
+- incident-response
