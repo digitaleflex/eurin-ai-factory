@@ -40,3 +40,52 @@ Tout pattern réellement réutilisable doit être candidat au Starter Kit, à un
 
 ## R10 — Technologies
 Une nouvelle technologie n'entre dans la Factory que si elle apporte un bénéfice démontrable ou répond à une contrainte précise.
+
+## R11 — Bibliothèque UI de référence
+Pour les applications web utilisant la convention UI de la Factory :
+- Tailwind CSS est la base de styling ;
+- shadcn/ui est la base de composants UI réutilisables ;
+- une autre bibliothèque UI structurante nécessite une justification.
+
+## R12 — ORM choisi par projet
+Prisma et Drizzle sont tous deux supportés par la Factory.
+
+Le choix n'est pas automatique. Il doit être déterminé par le contexte du projet et documenté.
+
+### Prisma peut être privilégié lorsque
+
+- la productivité applicative et la lisibilité du modèle sont prioritaires ;
+- le projet possède un modèle relationnel riche ;
+- l'équipe bénéficie d'une abstraction ORM plus structurée ;
+- les workflows de migration et de génération de client correspondent au projet.
+
+### Drizzle peut être privilégié lorsque
+
+- le projet nécessite un contrôle plus direct de la construction SQL ;
+- la proximité avec PostgreSQL et les primitives SQL est importante ;
+- une couche ORM/SQL légère et explicite correspond mieux au projet ;
+- les contraintes d'exécution favorisent une approche minimale.
+
+### Contraintes communes
+
+Quel que soit l'ORM :
+
+- le modèle conceptuel précède le schéma physique ;
+- les invariants métier ne doivent pas dépendre uniquement de l'ORM ;
+- les contraintes importantes doivent être garanties au niveau base de données lorsque pertinent ;
+- un seul outil doit être la source de vérité des migrations d'un projet ;
+- Prisma et Drizzle ne doivent pas être utilisés simultanément pour gérer le même schéma sans justification architecturale explicite ;
+- le SQL natif reste autorisé lorsqu'il apporte une valeur démontrée et doit être encapsulé/documenté.
+
+## R13 — Décision de stack traçable
+Pour tout nouveau projet significatif, la stack doit préciser au minimum :
+- frontend ;
+- UI/design system ;
+- backend ;
+- base de données ;
+- ORM/data access ;
+- authentification ;
+- déploiement ;
+- observabilité si nécessaire.
+
+Les choix importants doivent être justifiés lorsqu'il existe plusieurs options supportées par la Factory.
