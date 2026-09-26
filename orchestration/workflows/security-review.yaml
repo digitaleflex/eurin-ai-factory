@@ -1,0 +1,73 @@
+id: security-review
+version: "1.0"
+purpose: Assess security impact of a feature, change or architecture decision.
+owner: factory-orchestrator
+trigger: security review request
+
+context:
+  required: [project, source_of_truth, change_scope]
+  optional: [architecture, data_model, threat_context]
+
+preconditions:
+  - condition: Assets and affected scope are identifiable
+    failure_policy: BLOCK
+  - condition: Relevant source of truth is available
+    failure_policy: BLOCK
+
+steps:
+  - id: threat-model
+    agent: security
+    objective: Identify assets, actors, trust boundaries, threats and controls
+    required: true
+    condition: REQUIRED
+    inputs: [change_scope, architecture, data_model]
+    skills: [security]
+    gates: []
+    outputs: [threat-model, permission-matrix, findings]
+    failure_policy: ESCALATE
+    next: [human-approval, developer]
+
+  - id: human-approval
+    agent: human
+    objective: Decide on critical unresolved security risks or exceptions
+    required: false
+    condition: CONDITIONAL
+    inputs: [findings, risk-assessment]
+    skills: []
+    gates: [security-decision-gate]
+    outputs: [approval-decision]
+    failure_policy: BLOCK
+    next: [developer]
+
+  - id: developer
+    agent: developer
+    objective: Implement approved mitigations when remediation is requested
+    required: false
+    condition: CONDITIONAL
+    inputs: [findings, approval-decision]
+    skills: [relevant-project-skills]
+    gates: []
+    outputs: [mitigations]
+    failure_policy: REVISE
+    next: [qa]
+
+  - id: qa
+    agent: qa
+    objective: Verify security acceptance criteria and mitigation evidence
+    required: false
+    condition: CONDITIONAL
+    inputs: [findings, mitigations]
+    skills: [testing]
+    gates: []
+    outputs: [verification-report]
+    failure_policy: REVISE
+    next: []
+
+exit_criteria:
+  - Findings documented with evidence
+  - Critical decisions explicitly resolved
+  - Required mitigations verified or formally accepted
+  - No implicit security exception
+
+memory_review:
+  required: true
