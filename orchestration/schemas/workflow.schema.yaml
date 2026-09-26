@@ -1,0 +1,57 @@
+schema_version: "1.0"
+name: WorkflowDefinition
+purpose: Machine-readable contract for Factory workflows
+
+required:
+  - id
+  - version
+  - purpose
+  - trigger
+  - context
+  - preconditions
+  - steps
+  - exit_criteria
+
+fields:
+  id: string
+  version: string
+  purpose: string
+  owner: string
+  trigger:
+    type: string
+    description: Event or request that starts the workflow
+  context:
+    required: [project, source_of_truth]
+    optional: [issue, branch, files, previous_execution]
+  preconditions:
+    type: list
+    item:
+      condition: string
+      failure_policy: BLOCK | ESCALATE | ABORT
+  steps:
+    type: list
+    item:
+      id: string
+      agent: string
+      objective: string
+      required: boolean
+      condition: REQUIRED | CONDITIONAL | OPTIONAL
+      inputs: list
+      skills: list
+      gates: list
+      outputs: list
+      failure_policy: RETRY | REVISE | ESCALATE | BLOCK | ABORT
+      next: list
+  exit_criteria:
+    type: list
+  escalation_policy:
+    type: string
+  memory_review:
+    required: boolean
+
+invariants:
+  - "A workflow cannot bypass a Decision Gate."
+  - "A missing mandatory handoff blocks progression."
+  - "NOT VERIFIED cannot be converted to PASS without evidence."
+  - "High-blast-radius actions require human approval before execution."
+  - "The orchestrator routes work; it does not replace human decisions."
