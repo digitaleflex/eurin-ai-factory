@@ -1,0 +1,12 @@
+{
+  "name": "@eurin-ai-factory/orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/*.test.ts"
+  },
+  "devDependencies": { "typescript": "^5.9.2" },
+  "dependencies": { "yaml": "^2.8.1" }
+}
