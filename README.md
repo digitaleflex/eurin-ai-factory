@@ -10,6 +10,7 @@ eurin-ai-factory/
 ├── rules/        # constitution et règles
 ├── skills/       # connaissances spécialisées réutilisables
 ├── templates/    # formats d'artefacts
+├── orchestration/ # workflows, gates et handoffs
 ├── docs/         # modèles de compréhension et documentation
 ├── memory/       # décisions, patterns, leçons
 └── examples/     # exemples de projets
