@@ -19,6 +19,15 @@ erDiagram
     LESSON }o--o{ RULE : informs
     PATTERN }o--o{ TEMPLATE : informs
     PROJECT { string id string name string status }
+
+    classDef context fill:#2563EB,color:#fff,stroke:#1D4ED8,stroke-width:2px;
+    classDef product fill:#10B981,color:#fff,stroke:#047857,stroke-width:2px;
+    classDef architecture fill:#7C3AED,color:#fff,stroke:#6D28D9,stroke-width:2px;
+    classDef development fill:#F59E0B,color:#111827,stroke:#D97706,stroke-width:2px;
+    classDef quality fill:#EF4444,color:#fff,stroke:#B91C1C,stroke-width:2px;
+    classDef learning fill:#EAB308,color:#111827,stroke:#A16207,stroke-width:2px;
+    classDef infra fill:#06B6D4,color:#fff,stroke:#0891B2,stroke-width:2px;
+    classDef decision fill:#F97316,color:#fff,stroke:#C2410C,stroke-width:2px;
     FEATURE { string id string project_id string status }
     TASK { string id string feature_id string agent_id string status }
     AGENT { string id string role string scope }
