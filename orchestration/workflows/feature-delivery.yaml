@@ -1,0 +1,146 @@
+id: feature-delivery
+version: "1.0"
+purpose: Deliver a new product feature through controlled agent collaboration.
+owner: factory-orchestrator
+trigger: approved feature request
+
+context:
+  required: [project, source_of_truth]
+  optional: [issue, branch, files]
+
+preconditions:
+  - condition: Product problem and acceptance criteria are sufficiently defined
+    failure_policy: BLOCK
+  - condition: Source of Truth is identified
+    failure_policy: BLOCK
+
+steps:
+  - id: product
+    agent: product
+    objective: Clarify problem, users, value, scope and acceptance criteria
+    required: true
+    condition: REQUIRED
+    inputs: [project, request, source_of_truth]
+    skills: []
+    gates: [product-decision-gate]
+    outputs: [product-spec, acceptance-criteria]
+    failure_policy: REVISE
+    next: [architect]
+
+  - id: architect
+    agent: architect
+    objective: Define architecture, stack, contracts, diagrams and risks
+    required: true
+    condition: REQUIRED
+    inputs: [product-spec, acceptance-criteria, project-context]
+    skills: [nextjs, postgresql, security, orm]
+    gates: [architecture-decision-gate]
+    outputs: [architecture-spec, stack-decision, architecture-diagrams]
+    failure_policy: ESCALATE
+    next: [ui, data, security, human-approval, developer]
+
+  - id: ui
+    agent: ui
+    objective: Define or implement UI/UX changes when the feature affects user experience
+    required: false
+    condition: CONDITIONAL
+    inputs: [product-spec, architecture-spec]
+    skills: [ui]
+    gates: []
+    outputs: [ui-spec, ui-changes]
+    failure_policy: REVISE
+    next: [developer]
+
+  - id: data
+    agent: data
+    objective: Define or implement data-model changes when persistence is affected
+    required: false
+    condition: CONDITIONAL
+    inputs: [product-spec, architecture-spec]
+    skills: [postgresql, orm]
+    gates: []
+    outputs: [data-model, migrations, data-access-changes]
+    failure_policy: ESCALATE
+    next: [developer]
+
+  - id: security
+    agent: security
+    objective: Analyze security impact when protected assets or trust boundaries are affected
+    required: false
+    condition: CONDITIONAL
+    inputs: [product-spec, architecture-spec]
+    skills: [security]
+    gates: []
+    outputs: [threat-model, permission-matrix, security-findings]
+    failure_policy: ESCALATE
+    next: [human-approval, developer]
+
+  - id: human-approval
+    agent: human
+    objective: Approve high-blast-radius, irreversible or explicitly reserved decisions
+    required: false
+    condition: CONDITIONAL
+    inputs: [architecture-spec, security-findings, migration-plan]
+    skills: []
+    gates: [human-approval-gate]
+    outputs: [approval-decision]
+    failure_policy: BLOCK
+    next: [developer]
+
+  - id: developer
+    agent: developer
+    objective: Implement the approved feature without silently changing contracts
+    required: true
+    condition: REQUIRED
+    inputs: [product-spec, architecture-spec, specialist-handoffs]
+    skills: [relevant-project-skills]
+    gates: []
+    outputs: [implementation, tests]
+    failure_policy: REVISE
+    next: [qa]
+
+  - id: qa
+    agent: qa
+    objective: Verify acceptance criteria and risk-based tests with evidence
+    required: true
+    condition: REQUIRED
+    inputs: [implementation, acceptance-criteria, tests]
+    skills: [testing]
+    gates: []
+    outputs: [qa-report]
+    failure_policy: REVISE
+    next: [deployment, developer]
+
+  - id: deployment
+    agent: deployment
+    objective: Validate and execute the approved delivery path
+    required: true
+    condition: REQUIRED
+    inputs: [implementation, qa-report, release-plan]
+    skills: [deployment]
+    gates: [release-gate]
+    outputs: [release-record]
+    failure_policy: ESCALATE
+    next: [memory-review]
+
+  - id: memory-review
+    agent: orchestrator
+    objective: Capture reusable decisions, patterns, lessons or mistakes
+    required: true
+    condition: REQUIRED
+    inputs: [execution-record, handoffs, qa-report, release-record]
+    skills: []
+    gates: []
+    outputs: [memory-candidates]
+    failure_policy: REVISE
+    next: []
+
+exit_criteria:
+  - Acceptance criteria satisfied
+  - Required validations have evidence
+  - No unresolved blocking risk
+  - Release path completed or explicitly handed off
+  - Memory review completed
+
+memory_review:
+  required: true
