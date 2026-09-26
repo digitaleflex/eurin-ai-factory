@@ -1,0 +1,110 @@
+id: bug-fix
+version: "1.0"
+purpose: Diagnose, fix and verify a reproducible software defect.
+owner: factory-orchestrator
+trigger: confirmed bug report
+
+context:
+  required: [project, source_of_truth, bug_report]
+  optional: [logs, reproduction_steps, affected_files]
+
+preconditions:
+  - condition: Bug is reproducible or sufficient evidence exists
+    failure_policy: BLOCK
+  - condition: Expected behavior is defined
+    failure_policy: BLOCK
+
+steps:
+  - id: triage
+    agent: qa
+    objective: Reproduce the defect, establish expected versus actual behavior and assess severity
+    required: true
+    condition: REQUIRED
+    inputs: [bug_report, source_of_truth]
+    skills: [testing]
+    gates: []
+    outputs: [reproduction-evidence, severity, suspected-scope]
+    failure_policy: BLOCK
+    next: [security-review, developer]
+
+  - id: security-review
+    agent: security
+    objective: Assess whether the defect creates a security impact
+    required: false
+    condition: CONDITIONAL
+    inputs: [triage-results]
+    skills: [security]
+    gates: []
+    outputs: [security-impact]
+    failure_policy: ESCALATE
+    next: [developer, human-approval]
+
+  - id: human-approval
+    agent: human
+    objective: Approve emergency or high-impact remediation when required
+    required: false
+    condition: CONDITIONAL
+    inputs: [security-impact, triage-results]
+    skills: []
+    gates: [human-approval-gate]
+    outputs: [approval-decision]
+    failure_policy: BLOCK
+    next: [developer]
+
+  - id: developer
+    agent: developer
+    objective: Implement the smallest justified correction and regression coverage
+    required: true
+    condition: REQUIRED
+    inputs: [triage-results, source-of-truth, security-impact]
+    skills: [relevant-project-skills]
+    gates: []
+    outputs: [fix, regression-tests]
+    failure_policy: REVISE
+    next: [qa]
+
+  - id: qa
+    agent: qa
+    objective: Verify the original defect is fixed and regression risk is covered
+    required: true
+    condition: REQUIRED
+    inputs: [fix, regression-tests, bug-report]
+    skills: [testing]
+    gates: []
+    outputs: [qa-report]
+    failure_policy: REVISE
+    next: [deployment, developer]
+
+  - id: deployment
+    agent: deployment
+    objective: Release the fix according to the approved delivery path
+    required: true
+    condition: REQUIRED
+    inputs: [fix, qa-report]
+    skills: [deployment]
+    gates: [release-gate]
+    outputs: [release-record]
+    failure_policy: ESCALATE
+    next: [memory-review]
+
+  - id: memory-review
+    agent: orchestrator
+    objective: Record the root cause and reusable prevention insight when justified
+    required: true
+    condition: REQUIRED
+    inputs: [execution-record, qa-report]
+    skills: []
+    gates: []
+    outputs: [memory-candidates]
+    failure_policy: REVISE
+    next: []
+
+exit_criteria:
+  - Original defect verified fixed
+  - Regression coverage verified
+  - No unresolved blocking risk
+  - Release completed or explicitly handed off
+  - Memory review completed
+
+memory_review:
+  required: true
