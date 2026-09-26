@@ -16,8 +16,9 @@ Un Skill n'est pas un agent.
 |---|---|---|
 | Next.js | Frontend / application web | Architect, Developer, QA |
 | PostgreSQL | Données / persistance | Architect, Developer, QA |
+| ORM | Couche d'accès aux données : Prisma / Drizzle | Architect, Developer, QA |
 | Security | Sécurité applicative | Architect, Developer, QA |
-| UI | Interface / expérience | Product, Architect, Developer, QA |
+| UI | Interface / expérience : Tailwind + shadcn/ui | Product, Architect, Developer, QA |
 | Testing | Validation automatisée | Developer, QA |
 | Deployment | Build / delivery / infrastructure | Architect, Developer, QA |
 
@@ -58,3 +59,23 @@ Implementation
 ```
 
 Les Rules ont priorité sur les recommandations d'un Skill.
+
+## Sélection de stack
+
+La Factory ne considère pas Prisma ou Drizzle comme un choix universel.
+
+Le projet détermine le choix à partir de :
+
+- type de produit ;
+- modèle de données ;
+- besoin de contrôle SQL ;
+- complexité des relations ;
+- environnement d'exécution ;
+- contraintes serverless/edge ;
+- conventions de l'équipe ;
+- maturité et maintenabilité attendues ;
+- coût de migration ;
+- compétences déjà disponibles.
+
+Le choix doit être explicite dans le contexte technique du projet.
+
