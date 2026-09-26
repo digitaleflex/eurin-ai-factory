@@ -4,24 +4,21 @@ L'orchestration décrit comment la Factory fait travailler les agents ensemble.
 
 Elle ne remplace ni les agents, ni les règles, ni les Skills.
 
-## Architecture
+## Runtime V1
 
-```text
-User / Eurin
-    ↓
-Orchestrator
-    ├── Context Loader
-    ├── Decision Gates
-    ├── Workflow Engine
-    │      ├── Agents
-    │      └── Handoffs
-    ├── Validation
-    ├── Escalation / Human Approval
-    ├── Execution Record
-    └── Memory Capture
-             ↓
-          Outcome
-```
+Le prototype exécutable se trouve dans `orchestration/runtime/`.
+
+Workflow YAML → validation → State Machine → Decision Gate → Agent Runner → Handoff Validation → Next Step → Execution Record.
+
+Le runtime est volontairement découplé des fournisseurs LLM et des systèmes externes.
+
+### Interfaces principales
+
+- `AgentRunner` : point d'entrée contrôlé vers un agent.
+- `GateEvaluator` : décide si une étape peut franchir un Decision Gate.
+- `WorkflowContext` : contexte minimal transmis à l'exécution.
+- `ExecutionRecord` : trace structurée de l'exécution.
+- `assertTransition()` : interdit les transitions d'état non prévues.
 
 ## Responsabilités
 
@@ -50,6 +47,7 @@ Orchestrator
 ## Documents
 
 - [Engine](./engine.md)
+- [Runtime V1](./runtime/README.md)
 - [Context Loading](./context-loading.md)
 - [Decision Gates](./decision-gates.md)
 - [Workflow Definition](./workflow-definition.md)
