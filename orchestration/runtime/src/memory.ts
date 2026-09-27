@@ -53,6 +53,7 @@ export interface MemoryReview {
 
 export interface MemoryStore {
   add(entry: MemoryEntry): void;
+  update(entry: MemoryEntry): void;
   get(id: string): MemoryEntry | undefined;
   list(status?: MemoryStatus): MemoryEntry[];
 }
@@ -63,6 +64,13 @@ export class InMemoryMemoryStore implements MemoryStore {
   add(entry: MemoryEntry): void {
     if (this.entries.has(entry.id)) {
       throw new Error(`Memory entry already exists: ${entry.id}`);
+    }
+    this.entries.set(entry.id, structuredClone(entry));
+  }
+
+  update(entry: MemoryEntry): void {
+    if (!this.entries.has(entry.id)) {
+      throw new Error(`Memory entry not found: ${entry.id}`);
     }
     this.entries.set(entry.id, structuredClone(entry));
   }
@@ -99,6 +107,14 @@ export class FactoryMemoryEngine {
       createdAt: new Date().toISOString(),
       sourceExecutionId: input.sourceExecutionId
     };
+
+    const fingerprint = memoryFingerprint(candidate);
+    const duplicate = this.store.list().find((entry) =>
+      entry.status !== "REVOKED" && memoryFingerprint(entry) === fingerprint
+    );
+    if (duplicate) {
+      throw new Error(`Duplicate memory candidate detected: ${duplicate.id}`);
+    }
 
     this.store.add(candidate);
     return candidate;
@@ -160,12 +176,7 @@ export class FactoryMemoryEngine {
   private replace(entry: MemoryEntry): void {
     const existing = this.store.get(entry.id);
     if (!existing) throw new Error(`Memory entry not found: ${entry.id}`);
-    const store = this.store as InMemoryMemoryStore;
-    if (store instanceof InMemoryMemoryStore) {
-      store.replace(entry);
-      return;
-    }
-    throw new Error("MemoryStore implementation does not support updates.");
+    this.store.update(entry);
   }
 
   private validateInput(input: MemoryCandidateInput): void {
