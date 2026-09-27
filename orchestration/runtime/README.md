@@ -124,3 +124,31 @@ Le modèle d'approbation conserve :
 - justification.
 
 Les secrets évidents (`token`, `password`, `credential`, `api_key`, etc.) ne sont pas copiés dans les éléments de preuve. La persistance durable et la reprise depuis un checkpoint relèvent de l'Execution Store.
+
+
+## Observability and metrics
+
+Le runtime expose un contrat d'observabilité indépendant du moteur :
+- `ExecutionEventSink` reçoit les événements d'exécution sans imposer de fournisseur ;
+- `InMemoryExecutionEventSink` permet l'inspection déterministe en V1 ;
+- `MetricsCollector` dérive des compteurs à partir des `ExecutionRecord` ;
+- `InMemoryMetricsCollector` fournit une implémentation locale pour les tests et le pilotage.
+
+Les événements couvrent notamment :
+- transitions d'état ;
+- évaluation et rejet des gates ;
+- demande d'approbation humaine ;
+- démarrage/blocage/échec d'un agent ;
+- rejet d'un handoff ;
+- conditions d'étapes bloquées ou ignorées.
+
+Métriques V1 :
+- exécutions, complétions, échecs, blocages et escalades ;
+- approbations requises ;
+- gates évalués/rejetés ;
+- agents exécutés/en échec ;
+- handoffs rejetés ;
+- conditions bloquées/ignorées ;
+- durée totale observée.
+
+La collecte est volontairement en mémoire. Prometheus, OpenTelemetry ou une autre plateforme restent des adapters futurs ; ils ne doivent pas devenir une dépendance du noyau d'orchestration sans décision d'architecture.
