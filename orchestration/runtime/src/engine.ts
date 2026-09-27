@@ -62,6 +62,9 @@ export class Orchestrator {
       }
 
       if (condition.decision === "NOT_REQUIRED") {
+        if (record.status === "CONTEXT_READY" || record.status === "ACCEPTED") {
+          this.transition(record, "STEP_READY", `Step ${step.id} skipped by structured condition.`);
+        }
         step = this.nextStep(workflow, step);
         if (!step) {
           this.transition(record, "MEMORY_REVIEW", "Required execution steps completed.");
@@ -128,8 +131,7 @@ export class Orchestrator {
           agent: step.agent
         });
         this.transition(record, "BLOCKED", `Agent blocked step ${step.id}.`);
-        await this.executionStore?.save(record);
-        return record;
+        return this.finish(record);
       }
       if (result.status === "FAIL") {
         this.emit(record, {
@@ -141,8 +143,7 @@ export class Orchestrator {
           agent: step.agent
         });
         this.transition(record, "FAILED", `Agent failed step ${step.id}.`);
-        await this.executionStore?.save(record);
-        return record;
+        return this.finish(record);
       }
 
       this.transition(record, "HANDOFF_VALIDATION", `Validating handoff from ${step.agent}.`);
@@ -158,8 +159,7 @@ export class Orchestrator {
           detail: `Handoff from ${step.agent} is incomplete.`
         });
         this.transition(record, "REJECTED", `Handoff from ${step.agent} is incomplete.`);
-        await this.executionStore?.save(record);
-        return record;
+        return this.finish(record);
       }
 
       this.transition(record, "ACCEPTED", `Handoff from ${step.agent} accepted.`);
