@@ -18,7 +18,7 @@ export interface RoutingDecision {
   category?: RequestCategory;
   workflowId?: string;
   workflowVersion?: string;
-  requiredContext: string[];
+  requiredContext: readonly string[];
   reason: string;
   evidence: string[];
   context: WorkflowContext;
