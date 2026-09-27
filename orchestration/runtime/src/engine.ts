@@ -69,7 +69,11 @@ export class Orchestrator {
         for (const gate of step.gates) {
           const decision = await this.gateEvaluator.evaluate(gate, context);
           if (decision.decision !== "APPROVED") {
-            const target = decision.decision === "ESCALATED" ? "ESCALATED" : "BLOCKED";
+            const target = decision.decision === "APPROVAL_REQUIRED"
+              ? "APPROVAL_REQUIRED"
+              : decision.decision === "ESCALATED"
+                ? "ESCALATED"
+                : "BLOCKED";
             this.transition(record, target, decision.reason ?? `Gate ${gate} did not approve.`);
             return record;
           }
