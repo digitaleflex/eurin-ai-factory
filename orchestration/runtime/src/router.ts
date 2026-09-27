@@ -53,16 +53,13 @@ export class ContextRouter {
 
     if (input.workflowId) {
       const workflow = this.registry.get(input.workflowId, input.workflowVersion);
-      return {
-        status: "ROUTED",
-        category: this.categoryForWorkflow(workflow.id),
-        workflowId: workflow.id,
-        workflowVersion: workflow.version,
-        requiredContext: workflow.context.required,
-        reason: "Workflow explicitly selected by the caller.",
-        evidence: [`Explicit workflow: ${workflow.id}@${workflow.version}`],
-        context: { values: baseContext }
-      };
+      return this.toRoutedDecision(workflow.id, workflow.version, baseContext,
+        "Workflow explicitly selected by the caller.",
+        [`Explicit workflow: ${workflow.id}@${workflow.version}`]);
+    }
+
+    if (input.category) {
+      return this.routeCategory(input.category, baseContext, "Request category explicitly supplied by the caller.");
     }
 
     const matches = (Object.entries(signals) as [RequestCategory, RegExp[]][])
@@ -83,7 +80,12 @@ export class ContextRouter {
       };
     }
 
-    const category = matches[0];
+    return this.routeCategory(matches[0], baseContext, "Exactly one supported request category matched.", [
+      `Category signal: ${matches[0]}`
+    ]);
+  }
+
+  private routeCategory(category: RequestCategory, context: Record<string, unknown>, reason: string, evidence: string[] = []): RoutingDecision {
     const workflowId = this.workflowForCategory(category);
     if (!this.registry.has(workflowId, "1.0")) {
       return {
@@ -92,20 +94,32 @@ export class ContextRouter {
         requiredContext: [],
         reason: `No registered workflow version 1.0 is available for ${category}.`,
         evidence: [`Expected workflow: ${workflowId}@1.0`],
-        context: { values: baseContext }
+        context: { values: context }
       };
     }
 
     const workflow = this.registry.get(workflowId, "1.0");
+    return this.toRoutedDecision(workflow.id, workflow.version, context, reason, evidence, category);
+  }
+
+  private toRoutedDecision(
+    workflowId: string,
+    workflowVersion: string,
+    context: Record<string, unknown>,
+    reason: string,
+    evidence: string[],
+    category = this.categoryForWorkflow(workflowId)
+  ): RoutingDecision {
+    const workflow = this.registry.get(workflowId, workflowVersion);
     return {
       status: "ROUTED",
       category,
       workflowId: workflow.id,
       workflowVersion: workflow.version,
       requiredContext: workflow.context.required,
-      reason: "Exactly one supported request category matched.",
-      evidence: [`Category signal: ${category}`],
-      context: { values: baseContext }
+      reason,
+      evidence,
+      context: { values: context }
     };
   }
 
