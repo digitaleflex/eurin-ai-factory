@@ -33,18 +33,12 @@ test("memory candidate is explicit and can be approved", () => {
   assert.equal(approved.reviewedBy, "human");
 });
 
-test("approval without evidence is rejected", () => {
+test("candidate without evidence is rejected", () => {
   const engine = new FactoryMemoryEngine(new InMemoryMemoryStore());
-  const candidate = engine.propose({
+  assert.throws(() => engine.propose({
     ...input(),
     id: "mem-2",
-    evidence: ["documented evidence"]
-  });
-  assert.throws(() => engine.review({
-    candidateId: candidate.id,
-    decision: "APPROVE",
-    reviewer: "human",
-    reason: "Review"
+    evidence: []
   }), /Evidence/);
 });
 
