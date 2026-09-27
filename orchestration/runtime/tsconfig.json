@@ -3,10 +3,11 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "rootDir": ".",
+    "outDir": "dist",
     "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true,
-    "allowImportingTsExtensions": true
+    "noEmit": false,
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*.ts",
