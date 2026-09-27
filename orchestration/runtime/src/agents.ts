@@ -53,7 +53,8 @@ export function normalizeAgentResult(result: unknown, step: WorkflowStep): Agent
   const candidate = result as Partial<AgentResult>;
   const validStatuses = new Set(["PASS", "FAIL", "BLOCKED", "PARTIAL"]);
 
-  if (!validStatuses.has(candidate.status ?? "")) {
+  const status = candidate.status;
+  if (!status || !validStatuses.has(status)) {
     throw new Error(`Agent ${step.agent} returned an invalid status.`);
   }
   if (typeof candidate.objective !== "string" || !candidate.objective.trim()) {
@@ -70,7 +71,7 @@ export function normalizeAgentResult(result: unknown, step: WorkflowStep): Agent
   }
 
   return {
-    status: candidate.status,
+    status,
     objective: candidate.objective,
     workPerformed: candidate.workPerformed,
     filesChanged: candidate.filesChanged as string[],
