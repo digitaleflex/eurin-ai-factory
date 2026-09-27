@@ -106,3 +106,21 @@ Les tests couvrent :
 - enregistrement/exécution d'adapters ;
 - agent inconnu ;
 - sortie d'agent malformée.
+
+## Human approval
+
+Le runtime expose `HumanApprovalAdapter` et `HumanApprovalGateEvaluator`. Lorsqu'un gate exige une décision humaine, l'évaluation retourne `APPROVAL_REQUIRED` et l'orchestrateur s'arrête avant l'action gated.
+
+Le modèle d'approbation conserve :
+- identifiant de demande ;
+- gate concerné ;
+- résumé ;
+- impact ;
+- preuves sûres ;
+- options ;
+- acteur ;
+- décision ;
+- horodatage ;
+- justification.
+
+Les secrets évidents (`token`, `password`, `credential`, `api_key`, etc.) ne sont pas copiés dans les éléments de preuve. La persistance durable et la reprise depuis un checkpoint relèvent de l'Execution Store.
