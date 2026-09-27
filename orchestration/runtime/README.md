@@ -152,3 +152,22 @@ Métriques V1 :
 - durée totale observée.
 
 La collecte est volontairement en mémoire. Prometheus, OpenTelemetry ou une autre plateforme restent des adapters futurs ; ils ne doivent pas devenir une dépendance du noyau d'orchestration sans décision d'architecture.
+
+
+## Factory Memory Engine
+
+Le runtime expose un moteur de mémoire contrôlée aligné sur la politique Factory :
+
+`Execution → Observation → Evidence → Candidate → Review → Approved Memory → Reuse`
+
+Le moteur :
+- crée explicitement des candidats avec contexte, observation, preuves, insight, conditions de réutilisation et limitations ;
+- refuse les candidats sans preuve ;
+- détecte les doublons sur une empreinte déterministe ;
+- exige une revue humaine explicite avant le statut `ACTIVE` ;
+- permet `REJECT` et `SUPERSEDE` ;
+- conserve le contexte et les limitations lors de la réutilisation ;
+- refuse des motifs évidents de secrets, credentials et données personnelles dans les entrées ;
+- ne promeut jamais automatiquement une sortie d'agent en mémoire active.
+
+La persistance V1 est en mémoire. Une persistance durable, une recherche sémantique ou une synchronisation avec un système externe devront être introduites par des adapters et une décision d'architecture dédiée.
