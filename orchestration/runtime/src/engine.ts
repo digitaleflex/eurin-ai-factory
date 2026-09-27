@@ -5,12 +5,14 @@ import type {
   AgentRunner, ExecutionRecord, GateEvaluator, WorkflowContext,
   WorkflowDefinition, WorkflowStep
 } from "./types.js";
+import type { ExecutionStore } from "./store.js";
 
 export class Orchestrator {
   constructor(
     private readonly agentRunner: AgentRunner,
     private readonly gateEvaluator: GateEvaluator,
-    private readonly conditionEvaluator: StepConditionEvaluator = new StructuredConditionEvaluator()
+    private readonly conditionEvaluator: StepConditionEvaluator = new StructuredConditionEvaluator(),
+    private readonly executionStore?: ExecutionStore
   ) {}
 
   async execute(workflow: WorkflowDefinition, context: WorkflowContext): Promise<ExecutionRecord> {
@@ -24,10 +26,13 @@ export class Orchestrator {
     };
 
     this.transition(record, "INTAKE", "Execution created.");
+    await this.executionStore?.create(record);
 
     for (const field of workflow.context.required) {
       if (!(field in context.values)) {
         this.transition(record, "BLOCKED", `Missing required context: ${field}`);
+        await this.executionStore?.save(record);
+        await this.executionStore?.save(record);
         return record;
       }
     }
@@ -75,6 +80,7 @@ export class Orchestrator {
                 ? "ESCALATED"
                 : "BLOCKED";
             this.transition(record, target, decision.reason ?? `Gate ${gate} did not approve.`);
+            await this.executionStore?.save(record);
             return record;
           }
         }
