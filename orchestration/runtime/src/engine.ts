@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { assertTransition } from "./state-machine.js";
+import { StructuredConditionEvaluator, type StepConditionEvaluator } from "./conditions.js";
 import type {
   AgentRunner, ExecutionRecord, GateEvaluator, WorkflowContext,
   WorkflowDefinition, WorkflowStep
@@ -8,7 +9,8 @@ import type {
 export class Orchestrator {
   constructor(
     private readonly agentRunner: AgentRunner,
-    private readonly gateEvaluator: GateEvaluator
+    private readonly gateEvaluator: GateEvaluator,
+    private readonly conditionEvaluator: StepConditionEvaluator = new StructuredConditionEvaluator()
   ) {}
 
   async execute(workflow: WorkflowDefinition, context: WorkflowContext): Promise<ExecutionRecord> {
@@ -32,17 +34,35 @@ export class Orchestrator {
 
     this.transition(record, "CONTEXT_READY", "Required context is available.");
 
-    const firstStep = workflow.steps[0];
-    if (!firstStep) {
-      this.transition(record, "MEMORY_REVIEW", "No executable step found.");
-      this.transition(record, "COMPLETED", "Workflow completed.");
-      return record;
-    }
-
-    let step: WorkflowStep | undefined = firstStep;
+    let step: WorkflowStep | undefined = workflow.steps[0];
 
     while (step) {
       record.currentStep = step.id;
+
+      const condition = this.conditionEvaluator.evaluate(step, context);
+      record.events.push({
+        timestamp: new Date().toISOString(),
+        executionId: record.executionId,
+        type: `STEP_CONDITION_${condition.decision}`,
+        state: record.status,
+        stepId: step.id,
+        agent: step.agent,
+        detail: `${condition.reason} Evidence: ${condition.evidence.join("; ")}`
+      });
+
+      if (condition.decision === "BLOCKED") {
+        this.transition(record, "BLOCKED", `Condition for ${step.id} cannot be evaluated safely.`);
+        return record;
+      }
+
+      if (condition.decision === "NOT_REQUIRED") {
+        step = this.nextStep(workflow, step);
+        if (!step) {
+          this.transition(record, "MEMORY_REVIEW", "Required execution steps completed.");
+          this.transition(record, "COMPLETED", "Workflow completed.");
+        }
+        continue;
+      }
 
       if (step.gates.length) {
         this.transition(record, "GATE_PENDING", `Gate required before ${step.id}.`);
@@ -81,7 +101,7 @@ export class Orchestrator {
 
       this.transition(record, "ACCEPTED", `Handoff from ${step.agent} accepted.`);
 
-      step = this.nextRequiredStep(workflow, step);
+      step = this.nextStep(workflow, step);
       if (!step) {
         this.transition(record, "MEMORY_REVIEW", "Required execution steps completed.");
         this.transition(record, "COMPLETED", "Workflow completed.");
@@ -91,12 +111,10 @@ export class Orchestrator {
     return record;
   }
 
-  private nextRequiredStep(workflow: WorkflowDefinition, current: WorkflowStep) {
-    for (const id of current.next) {
-      const candidate = workflow.steps.find((item) => item.id === id);
-      if (candidate?.condition === "REQUIRED") return candidate;
-    }
-    return undefined;
+  private nextStep(workflow: WorkflowDefinition, current: WorkflowStep): WorkflowStep | undefined {
+    return current.next
+      .map((id) => workflow.steps.find((item) => item.id === id))
+      .find((candidate): candidate is WorkflowStep => candidate !== undefined);
   }
 
   private isHandoffValid(result: {
