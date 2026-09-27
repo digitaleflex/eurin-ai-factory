@@ -30,3 +30,19 @@ npm run build
 5. Agent adapters
 6. Human approval adapter
 7. Metrics/event sink
+
+## Conditional steps
+
+Le runtime V1 utilise `StructuredConditionEvaluator`. Une étape `REQUIRED` est toujours exécutée. Une étape `CONDITIONAL` ou `OPTIONAL` est décidée uniquement à partir de `context.values.required_steps`, une liste structurée d'identifiants d'étapes.
+
+Exemple :
+
+```ts
+{ values: {
+  project: "demo",
+  source_of_truth: "product-spec",
+  required_steps: ["ui", "security"]
+} }
+```
+
+Le résultat est toujours `REQUIRED`, `NOT_REQUIRED` ou `BLOCKED`, avec raison et éléments de preuve. Le runtime n'interprète pas le texte libre pour inventer une obligation métier. Si l'information structurée nécessaire manque, l'exécution est bloquée.
