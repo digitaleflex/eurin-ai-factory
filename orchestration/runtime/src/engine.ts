@@ -32,7 +32,6 @@ export class Orchestrator {
       if (!(field in context.values)) {
         this.transition(record, "BLOCKED", `Missing required context: ${field}`);
         await this.executionStore?.save(record);
-        await this.executionStore?.save(record);
         return record;
       }
     }
@@ -57,6 +56,7 @@ export class Orchestrator {
 
       if (condition.decision === "BLOCKED") {
         this.transition(record, "BLOCKED", `Condition for ${step.id} cannot be evaluated safely.`);
+        await this.executionStore?.save(record);
         return record;
       }
 
@@ -95,10 +95,12 @@ export class Orchestrator {
 
       if (result.status === "BLOCKED") {
         this.transition(record, "BLOCKED", `Agent blocked step ${step.id}.`);
+        await this.executionStore?.save(record);
         return record;
       }
       if (result.status === "FAIL") {
         this.transition(record, "FAILED", `Agent failed step ${step.id}.`);
+        await this.executionStore?.save(record);
         return record;
       }
 
@@ -106,6 +108,7 @@ export class Orchestrator {
 
       if (!this.isHandoffValid(result)) {
         this.transition(record, "REJECTED", `Handoff from ${step.agent} is incomplete.`);
+        await this.executionStore?.save(record);
         return record;
       }
 
@@ -118,6 +121,7 @@ export class Orchestrator {
       }
     }
 
+    await this.executionStore?.save(record);
     return record;
   }
 
