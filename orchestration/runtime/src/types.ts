@@ -13,12 +13,12 @@ export interface WorkflowStep {
   objective: string;
   required: boolean;
   condition: StepCondition;
-  inputs: string[];
-  skills: string[];
-  gates: string[];
-  outputs: string[];
+  inputs: readonly string[];
+  skills: readonly string[];
+  gates: readonly string[];
+  outputs: readonly string[];
   failure_policy: FailurePolicy;
-  next: string[];
+  next: readonly string[];
 }
 
 export interface WorkflowDefinition {
@@ -27,10 +27,10 @@ export interface WorkflowDefinition {
   purpose: string;
   owner?: string;
   trigger: string;
-  context: { required: string[]; optional?: string[] };
-  preconditions: Array<{ condition: string; failure_policy: FailurePolicy }>;
-  steps: WorkflowStep[];
-  exit_criteria: string[];
+  context: { readonly required: readonly string[]; readonly optional?: readonly string[] };
+  preconditions: ReadonlyArray<{ readonly condition: string; readonly failure_policy: FailurePolicy }>;
+  steps: readonly WorkflowStep[];
+  exit_criteria: readonly string[];
   memory_review?: { required: boolean };
 }
 
@@ -40,11 +40,11 @@ export interface AgentResult {
   status: "PASS" | "FAIL" | "BLOCKED" | "PARTIAL";
   objective: string;
   workPerformed: string;
-  filesChanged: string[];
-  validation: string[];
-  risks: string[];
-  assumptions: string[];
-  limitations: string[];
+  filesChanged: readonly string[];
+  validation: readonly string[];
+  risks: readonly string[];
+  assumptions: readonly string[];
+  limitations: readonly string[];
   nextAction?: string;
 }
 
