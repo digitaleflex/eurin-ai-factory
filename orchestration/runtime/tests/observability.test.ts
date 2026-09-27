@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { InMemoryExecutionEventSink, InMemoryMetricsCollector } from "../src/observability.ts";
-import type { ExecutionRecord } from "../src/types.ts";
+import { InMemoryExecutionEventSink, InMemoryMetricsCollector } from "../src/observability.js";
+import type { ExecutionRecord } from "../src/types.js";
 
 const base: ExecutionRecord = {
   executionId: "exec-1",
