@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { FactoryMemoryEngine, InMemoryMemoryStore } from "../src/memory.ts";
+import { FactoryMemoryEngine, InMemoryMemoryStore } from "../src/memory.js";
 
 function input(id = "mem-1") {
   return {
