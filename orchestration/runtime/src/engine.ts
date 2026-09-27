@@ -6,13 +6,16 @@ import type {
   WorkflowDefinition, WorkflowStep
 } from "./types.js";
 import type { ExecutionStore } from "./store.js";
+import type { ExecutionEventSink, MetricsCollector } from "./observability.js";
 
 export class Orchestrator {
   constructor(
     private readonly agentRunner: AgentRunner,
     private readonly gateEvaluator: GateEvaluator,
     private readonly conditionEvaluator: StepConditionEvaluator = new StructuredConditionEvaluator(),
-    private readonly executionStore?: ExecutionStore
+    private readonly executionStore?: ExecutionStore,
+    private readonly eventSink?: ExecutionEventSink,
+    private readonly metricsCollector?: MetricsCollector
   ) {}
 
   async execute(workflow: WorkflowDefinition, context: WorkflowContext): Promise<ExecutionRecord> {
@@ -44,7 +47,7 @@ export class Orchestrator {
       record.currentStep = step.id;
 
       const condition = this.conditionEvaluator.evaluate(step, context);
-      record.events.push({
+      this.emit(record, {
         timestamp: new Date().toISOString(),
         executionId: record.executionId,
         type: `STEP_CONDITION_${condition.decision}`,
@@ -73,12 +76,28 @@ export class Orchestrator {
         this.transition(record, "GATE_PENDING", `Gate required before ${step.id}.`);
         for (const gate of step.gates) {
           const decision = await this.gateEvaluator.evaluate(gate, context);
+          this.emit(record, {
+            timestamp: new Date().toISOString(),
+            executionId: record.executionId,
+            type: "GATE_EVALUATED",
+            state: record.status,
+            stepId: step.id,
+            detail: `Gate ${gate}: ${decision.decision}`
+          });
           if (decision.decision !== "APPROVED") {
             const target = decision.decision === "APPROVAL_REQUIRED"
               ? "APPROVAL_REQUIRED"
               : decision.decision === "ESCALATED"
                 ? "ESCALATED"
                 : "BLOCKED";
+            this.emit(record, {
+              timestamp: new Date().toISOString(),
+              executionId: record.executionId,
+              type: decision.decision === "APPROVAL_REQUIRED" ? "APPROVAL_REQUIRED" : "GATE_REJECTED",
+              state: record.status,
+              stepId: step.id,
+              detail: decision.reason ?? `Gate ${gate} did not approve.`
+            });
             this.transition(record, target, decision.reason ?? `Gate ${gate} did not approve.`);
             await this.executionStore?.save(record);
             return record;
@@ -89,16 +108,41 @@ export class Orchestrator {
 
       this.transition(record, "STEP_READY", `Step ${step.id} ready.`);
       this.transition(record, "AGENT_RUNNING", `Running agent ${step.agent}.`);
+      this.emit(record, {
+        timestamp: new Date().toISOString(),
+        executionId: record.executionId,
+        type: "AGENT_STARTED",
+        state: record.status,
+        stepId: step.id,
+        agent: step.agent,
+        detail: `Running agent ${step.agent}.`
+      });
 
       const result = await this.agentRunner.run(step, context);
       record.results[step.id] = result;
 
       if (result.status === "BLOCKED") {
+        this.emit(record, {
+          timestamp: new Date().toISOString(),
+          executionId: record.executionId,
+          type: "AGENT_BLOCKED",
+          state: record.status,
+          stepId: step.id,
+          agent: step.agent
+        });
         this.transition(record, "BLOCKED", `Agent blocked step ${step.id}.`);
         await this.executionStore?.save(record);
         return record;
       }
       if (result.status === "FAIL") {
+        this.emit(record, {
+          timestamp: new Date().toISOString(),
+          executionId: record.executionId,
+          type: "AGENT_FAILED",
+          state: record.status,
+          stepId: step.id,
+          agent: step.agent
+        });
         this.transition(record, "FAILED", `Agent failed step ${step.id}.`);
         await this.executionStore?.save(record);
         return record;
@@ -107,6 +151,15 @@ export class Orchestrator {
       this.transition(record, "HANDOFF_VALIDATION", `Validating handoff from ${step.agent}.`);
 
       if (!this.isHandoffValid(result)) {
+        this.emit(record, {
+          timestamp: new Date().toISOString(),
+          executionId: record.executionId,
+          type: "HANDOFF_REJECTED",
+          state: record.status,
+          stepId: step.id,
+          agent: step.agent,
+          detail: `Handoff from ${step.agent} is incomplete.`
+        });
         this.transition(record, "REJECTED", `Handoff from ${step.agent} is incomplete.`);
         await this.executionStore?.save(record);
         return record;
@@ -122,6 +175,7 @@ export class Orchestrator {
     }
 
     await this.executionStore?.save(record);
+    this.metricsCollector?.observe(record);
     return record;
   }
 
@@ -140,10 +194,15 @@ export class Orchestrator {
       result.status !== "PARTIAL";
   }
 
+  private emit(record: ExecutionRecord, event: ExecutionEvent) {
+    record.events.push(event);
+    void this.eventSink?.emit(event);
+  }
+
   private transition(record: ExecutionRecord, next: ExecutionRecord["status"], detail: string) {
     assertTransition(record.status, next);
     record.status = next;
-    record.events.push({
+    this.emit(record, {
       timestamp: new Date().toISOString(),
       executionId: record.executionId,
       type: "STATE_TRANSITION",
