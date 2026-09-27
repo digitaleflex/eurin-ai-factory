@@ -1,6 +1,6 @@
 export type WorkflowStatus =
   | "CREATED" | "INTAKE" | "CONTEXT_READY" | "GATE_PENDING"
-  | "BLOCKED" | "ESCALATED" | "APPROVED" | "STEP_READY"
+  | "BLOCKED" | "ESCALATED" | "APPROVAL_REQUIRED" | "APPROVED" | "STEP_READY"
   | "AGENT_RUNNING" | "FAILED" | "HANDOFF_VALIDATION"
   | "REJECTED" | "ACCEPTED" | "DELIVERY" | "MEMORY_REVIEW" | "COMPLETED";
 
@@ -54,7 +54,7 @@ export interface AgentRunner {
 
 export interface GateDecision {
   gateId: string;
-  decision: "APPROVED" | "REJECTED" | "ESCALATED" | "BLOCKED";
+  decision: "APPROVED" | "REJECTED" | "ESCALATED" | "APPROVAL_REQUIRED" | "BLOCKED";
   reason?: string;
 }
 
