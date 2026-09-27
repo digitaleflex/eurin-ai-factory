@@ -6,19 +6,57 @@ Elle ne remplace ni les agents, ni les règles, ni les Skills.
 
 ## Runtime V1
 
-Le prototype exécutable se trouve dans `orchestration/runtime/`.
+Le runtime exécutable se trouve dans `orchestration/runtime/`.
 
-Workflow YAML → validation → State Machine → Decision Gate → Agent Runner → Handoff Validation → Next Step → Execution Record.
+Le flux de base est :
 
-Le runtime est volontairement découplé des fournisseurs LLM et des systèmes externes.
+```text
+Request
+  ↓
+Context Router
+  ↓
+Workflow Registry
+  ↓
+Workflow Definition
+  ↓
+Orchestrator
+  ├─ Decision Gates
+  ├─ Agent Runner
+  ├─ Handoff Validation
+  └─ Execution Record
+```
 
-### Interfaces principales
+### Workflow Registry
 
-- `AgentRunner` : point d'entrée contrôlé vers un agent.
-- `GateEvaluator` : décide si une étape peut franchir un Decision Gate.
-- `WorkflowContext` : contexte minimal transmis à l'exécution.
-- `ExecutionRecord` : trace structurée de l'exécution.
-- `assertTransition()` : interdit les transitions d'état non prévues.
+Le `WorkflowRegistry` est la source runtime des workflows disponibles. Il charge les définitions YAML, applique le validateur du runtime, puis les indexe par `id@version`.
+
+Garanties :
+- chargement déterministe ;
+- validation avant enregistrement ;
+- rejet des doublons `id + version` ;
+- lookup explicite par version ;
+- aucun appel LLM ;
+- aucune persistance implicite.
+
+### Context Router
+
+Le `ContextRouter` transforme une demande en décision de routage traçable.
+
+Ordre de priorité :
+1. workflow explicitement demandé ;
+2. catégorie explicitement fournie ;
+3. classification déterministe limitée aux signaux V1.
+
+Le routeur ne remplace pas une compréhension sémantique complète. Une demande ambiguë est `ESCALATED`, une demande non classifiable est `BLOCKED`.
+
+Le routage fournit :
+- statut ;
+- catégorie éventuelle ;
+- workflow + version ;
+- contexte requis ;
+- raison ;
+- éléments de preuve ;
+- contexte minimal destiné au runtime.
 
 ## Responsabilités
 
@@ -61,6 +99,10 @@ Le runtime est volontairement découplé des fournisseurs LLM et des systèmes e
 
 - feature-delivery
 - bug-fix
-- architecture-change
 - security-review
+- architecture-change
 - incident-response
+
+## État de vérification
+
+Le code Registry/Router et leurs tests ont été ajoutés. L'exécution réelle de `npm install`, `npm run build` et `npm test` reste à effectuer dans l'environnement runtime ; elle doit être enregistrée via l'issue de vérification Runtime V1 avant de déclarer le composant VERIFIED.
