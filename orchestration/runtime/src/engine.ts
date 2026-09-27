@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { assertTransition } from "./state-machine.js";
 import { StructuredConditionEvaluator, type StepConditionEvaluator } from "./conditions.js";
 import type {
-  AgentRunner, ExecutionRecord, GateEvaluator, WorkflowContext,
+  AgentRunner, ExecutionEvent, ExecutionRecord, GateEvaluator, WorkflowContext,
   WorkflowDefinition, WorkflowStep
 } from "./types.js";
 import type { ExecutionStore } from "./store.js";
@@ -35,6 +35,7 @@ export class Orchestrator {
       if (!(field in context.values)) {
         this.transition(record, "BLOCKED", `Missing required context: ${field}`);
         await this.executionStore?.save(record);
+        this.metricsCollector?.observe(record);
         return record;
       }
     }
@@ -100,6 +101,7 @@ export class Orchestrator {
             });
             this.transition(record, target, decision.reason ?? `Gate ${gate} did not approve.`);
             await this.executionStore?.save(record);
+            this.metricsCollector?.observe(record);
             return record;
           }
         }
