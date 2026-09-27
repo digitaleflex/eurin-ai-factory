@@ -187,7 +187,7 @@ export class Orchestrator {
   }
 
   private isHandoffValid(result: {
-    status: string; objective: string; validation: string[]; limitations: string[];
+    status: string; objective: string; validation: readonly string[]; limitations: readonly string[];
   }): boolean {
     return Boolean(result.objective) &&
       Array.isArray(result.validation) &&
