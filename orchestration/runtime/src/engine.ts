@@ -34,9 +34,7 @@ export class Orchestrator {
     for (const field of workflow.context.required) {
       if (!(field in context.values)) {
         this.transition(record, "BLOCKED", `Missing required context: ${field}`);
-        await this.executionStore?.save(record);
-        this.metricsCollector?.observe(record);
-        return record;
+        return this.finish(record);
       }
     }
 
@@ -60,8 +58,7 @@ export class Orchestrator {
 
       if (condition.decision === "BLOCKED") {
         this.transition(record, "BLOCKED", `Condition for ${step.id} cannot be evaluated safely.`);
-        await this.executionStore?.save(record);
-        return record;
+        return this.finish(record);
       }
 
       if (condition.decision === "NOT_REQUIRED") {
@@ -100,9 +97,7 @@ export class Orchestrator {
               detail: decision.reason ?? `Gate ${gate} did not approve.`
             });
             this.transition(record, target, decision.reason ?? `Gate ${gate} did not approve.`);
-            await this.executionStore?.save(record);
-            this.metricsCollector?.observe(record);
-            return record;
+            return this.finish(record);
           }
         }
         this.transition(record, "APPROVED", `Gates approved for ${step.id}.`);
@@ -176,6 +171,10 @@ export class Orchestrator {
       }
     }
 
+    return this.finish(record);
+  }
+
+  private async finish(record: ExecutionRecord): Promise<ExecutionRecord> {
     await this.executionStore?.save(record);
     this.metricsCollector?.observe(record);
     return record;
