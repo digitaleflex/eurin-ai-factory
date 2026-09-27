@@ -1,0 +1,28 @@
+name: Runtime Verification
+
+on:
+  push:
+    paths:
+      - "orchestration/runtime/**"
+      - ".github/workflows/runtime.yml"
+  pull_request:
+    paths:
+      - "orchestration/runtime/**"
+      - ".github/workflows/runtime.yml"
+
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: orchestration/runtime
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: orchestration/runtime/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
