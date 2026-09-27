@@ -2,7 +2,7 @@ import type { AgentResult, WorkflowContext, WorkflowStep } from "./types.js";
 
 export interface AgentAdapter {
   readonly agentId: string;
-  run(step: WorkflowStep, context: WorkflowContext): Promise<AgentResult>;
+  run(step: WorkflowStep, context: WorkflowContext): Promise<unknown>;
 }
 
 export class AgentAdapterRegistry {
